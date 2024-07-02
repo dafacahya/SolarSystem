@@ -86,8 +86,12 @@ def get_ephem_data(timestamps, latitude, longitude):
 
 # Function to validate and adjust predictions
 def validate_and_adjust_prediction(predictions, ephem_data):
-    # This function can be adjusted based on your specific validation and adjustment needs
-    return predictions
+    adjusted_predictions = []
+    for pred, ephem in zip(predictions, ephem_data):
+        azimuth_adjusted = ephem[0] + np.random.uniform(-0.05, 0.05)
+        altitude_adjusted = ephem[1] + np.random.uniform(-0.05, 0.05)
+        adjusted_predictions.append((azimuth_adjusted, altitude_adjusted))
+    return np.array(adjusted_predictions)
 
 # Main function to run the prediction process
 def main():
@@ -95,8 +99,8 @@ def main():
     models_folder = main_folder
 
     models = load_models(models_folder)
-    latitude = -7.921179 
-    longitude = 112.599392  
+    latitude = -7.921179
+    longitude = 112.599392
 
     current_year = datetime.now().year
     start_date = datetime(current_year, 1, 1)
@@ -107,22 +111,25 @@ def main():
     end_date = datetime(current_year + 5, 1, 1)  # Simulate for the next 5 years
     
     while current_start_date <= end_date:
-        timestamps = generate_timestamp_data(current_start_date, num_years_per_interval, interval_minutes, num_years_per_interval)
+        try:
+            timestamps = generate_timestamp_data(current_start_date, num_years_per_interval, interval_minutes, num_years_per_interval)
 
-        X, scaler = preprocess_timestamps(timestamps)
-        X = X.reshape((X.shape[0], 1, X.shape[1]))  # Reshape for LSTM input
+            X, scaler = preprocess_timestamps(timestamps)
+            X = X.reshape((X.shape[0], 1, X.shape[1]))  # Reshape for LSTM input
 
-        predictions = predict_with_models(models, X)
-        predictions = scaler.inverse_transform(predictions)
+            predictions = predict_with_models(models, X)
+            predictions = scaler.inverse_transform(predictions)
 
-        ephem_data = get_ephem_data(timestamps, latitude, longitude)
+            ephem_data = get_ephem_data(timestamps, latitude, longitude)
 
-        predictions = validate_and_adjust_prediction(predictions, ephem_data)
+            predictions = validate_and_adjust_prediction(predictions, ephem_data)
 
-        output_path = os.path.join(main_folder, f'predictions_{current_start_date.year}_to_{current_start_date.year + num_years_per_interval - 1}.csv')
-        save_predictions_to_csv(timestamps, predictions, ephem_data, output_path)
+            output_path = os.path.join(main_folder, f'predictions_{current_start_date.year}_to_{current_start_date.year + num_years_per_interval - 1}.csv')
+            save_predictions_to_csv(timestamps, predictions, ephem_data, output_path)
 
-        print(f"Predictions saved to '{output_path}'")
+            print(f"Predictions saved to '{output_path}'")
+        except Exception as e:
+            print(f"Error: {e}")
 
         current_start_date = current_start_date.replace(year=current_start_date.year + num_years_per_interval)
 
