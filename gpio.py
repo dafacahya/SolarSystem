@@ -1,25 +1,31 @@
-import OrangePi.GPIO as GPIO
+import wiringpi
 import time
 
-GPIO.setmode(GPIO.BOARD)  # Use BOARD numbering scheme
+# Inisialisasi WiringPi dengan menggunakan skema penomoran GPIO
+wiringpi.wiringPiSetupGpio()
 
-# Define GPIO pins
-RELAY_PIN = 12  # Example pin
+# Tentukan pin GPIO yang akan digunakan untuk relay (misalnya, GPIO17)
+relay_pin = 17
 
-# Setup GPIO pin
-GPIO.setup(RELAY_PIN, GPIO.OUT)
+# Set pin relay sebagai output
+wiringpi.pinMode(relay_pin, wiringpi.OUTPUT)
 
 try:
     while True:
-        # Turn on the actuator
-        GPIO.output(RELAY_PIN, GPIO.HIGH)
-        print("Actuator ON")
-        time.sleep(2)
+        # Hidupkan relay (dengan mengatur pin ke LOW)
+        wiringpi.digitalWrite(relay_pin, 0)
+        print("Relay menyala")
+        time.sleep(2)  # Biarkan relay menyala selama 2 detik
 
-        # Turn off the actuator
-        GPIO.output(RELAY_PIN, GPIO.LOW)
-        print("Actuator OFF")
-        time.sleep(2)
+        # Matikan relay (dengan mengatur pin ke HIGH)
+        wiringpi.digitalWrite(relay_pin, 1)
+        print("Relay mati")
+        time.sleep(2)  # Biarkan relay mati selama 2 detik
 
 except KeyboardInterrupt:
-    GPIO.cleanup()
+    print("Program dihentikan")
+
+finally:
+    # Bersihkan pengaturan GPIO
+    wiringpi.digitalWrite(relay_pin, 1)  # Matikan relay
+    print("Relay dimatikan untuk keamanan")
