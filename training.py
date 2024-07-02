@@ -77,11 +77,7 @@ def main():
     X_test_reshaped = X_test_scaled.reshape((X_test_scaled.shape[0], timesteps, X_test_scaled.shape[1]))
 
     model = Sequential()
-    model.add(LSTM(units=2048, input_shape=(timesteps, X_train_scaled.shape[1]), return_sequences=True))
-    model.add(LSTM(units=1024, return_sequences=True))
-    model.add(LSTM(units=512, return_sequences=True))
-    model.add(LSTM(units=256, return_sequences=True))
-    model.add(LSTM(units=128, return_sequences=True))
+    model.add(LSTM(units=128, input_shape=(timesteps, X_train_scaled.shape[1]), return_sequences=True))
     model.add(LSTM(units=64, return_sequences=True))
     model.add(LSTM(units=32, return_sequences=True))
     model.add(LSTM(units=16, return_sequences=True))
@@ -95,7 +91,7 @@ def main():
 
     history = model.fit(X_train_reshaped, y_train_scaled, epochs=epochs, batch_size=1024, validation_data=(X_test_reshaped, y_test_scaled))
 
-    model_filename = f'my_model_{year_folder}.keras'
+    model_filename = f'my_model_{year_folder}.h5'
     model_path = os.path.join(models_folder, model_filename)
     model.save(model_path)
 

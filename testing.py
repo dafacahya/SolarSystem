@@ -8,6 +8,10 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import MinMaxScaler
 
+@tf.keras.utils.register_keras_serializable()
+def mse(y_true, y_pred):
+    return tf.reduce_mean(tf.square(y_true - y_pred))
+
 def load_dataset(csv_path):
     df = pd.read_csv(csv_path, sep=';')
     required_columns = ['Azimuth', 'Altitude', 'Timestamp']
@@ -56,16 +60,22 @@ def main():
     main_folder = 'Main_Folder'
 
     year_folder = input('Enter the year folder (e.g., 2020):')
-
     data_folder = os.path.join(main_folder, year_folder, f'cleaned_{year_folder}')
     models_folder = os.path.join(main_folder, year_folder, f'models_{year_folder}')
-    model_path = os.path.join(models_folder, f'my_model_{year_folder}.keras')
+    model_path = os.path.join(models_folder, f'my_model_{year_folder}.h5')
+
+    # Debugging: Print the paths
+    print(f"Main folder: {main_folder}")
+    print(f"Year folder: {year_folder}")
+    print(f"Data folder: {data_folder}")
+    print(f"Models folder: {models_folder}")
+    print(f"Model path: {model_path}")
 
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"No model found at: {model_path}")
 
     # Load the model
-    loaded_model = tf.keras.models.load_model(model_path)
+    loaded_model = tf.keras.models.load_model(model_path, custom_objects={'mse': mse})
 
     # Select CSV file from the cleaned data folder
     csv_path = select_csv_file_from_folder(data_folder)
@@ -89,10 +99,10 @@ def main():
     predicted_values = scaler_y.inverse_transform(predicted_values_scaled)
 
     # Calculate metrics
-    mse = mean_squared_error(y_test, predicted_values)
+    mse_score = mean_squared_error(y_test, predicted_values)
     r2 = r2_score(y_test, predicted_values)
 
-    print(f"Mean Squared Error on Test Data: {mse}")
+    print(f"Mean Squared Error on Test Data: {mse_score}")
     print(f"R-squared on Test Data: {r2}")
 
     # Plot 3D visualization
