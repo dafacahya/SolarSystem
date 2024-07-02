@@ -49,7 +49,8 @@ def preprocess_timestamps(timestamps):
 def predict_with_models(models, X):
     y_pred_sum = np.zeros((X.shape[0], 2))  # Assuming output is 2D: Azimuth and Altitude
     for model in models:
-        X_reshaped = np.expand_dims(X, axis=0)  # Add batch dimension
+        # Reshape X for the model
+        X_reshaped = np.expand_dims(X, axis=-1)  # Add feature dimension
         y_pred = model.predict(X_reshaped)
         y_pred_sum += np.squeeze(y_pred, axis=0)  # Aggregate predictions across models
     y_pred_avg = y_pred_sum / len(models)
@@ -109,7 +110,7 @@ def main():
     timestamps = generate_timestamp_data(start_date, interval_minutes, num_years)
 
     X, scaler = preprocess_timestamps(timestamps)
-    X = X.reshape((X.shape[0], 1, X.shape[1]))  # Reshape for LSTM input
+    X = X.reshape((X.shape[0], 1, 1))  # Reshape for LSTM input
 
     predictions = predict_with_models(models, X)
     predictions = scaler.inverse_transform(predictions)
