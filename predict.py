@@ -50,8 +50,9 @@ def preprocess_timestamps(timestamps):
 def predict_with_models(models, X):
     y_pred_sum = np.zeros((X.shape[0], 2))  # Assuming output is 2D: Azimuth and Altitude
     for model in models:
-        y_pred = model.predict(X)  # Remove extra reshaping
-        y_pred_sum += y_pred
+        X_reshaped = np.expand_dims(X, axis=0)  # Add batch dimension
+        y_pred = model.predict(X_reshaped)
+        y_pred_sum += np.squeeze(y_pred, axis=0)  # Aggregate predictions across models
     y_pred_avg = y_pred_sum / len(models)
     return y_pred_avg
 
