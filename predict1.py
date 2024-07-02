@@ -52,7 +52,7 @@ def predict_with_models(models, X):
         # Reshape X for the model
         X_reshaped = np.expand_dims(X, axis=-1)  # Add feature dimension
         y_pred = model.predict(X_reshaped)
-        y_pred_sum += np.squeeze(y_pred, axis=0)  # Aggregate predictions across models
+        y_pred_sum += y_pred  # Aggregate predictions across models
     y_pred_avg = y_pred_sum / len(models)
     return y_pred_avg
 
