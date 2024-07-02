@@ -5,7 +5,7 @@ import time
 MPU6050_ADDR = 0x30
 
 # Register dari MPU6050
-PWR_MGMT_1 = 0x6B
+PWR_MGMT_1 = 0x63
 SMPLRT_DIV = 0x19
 CONFIG = 0x1A
 GYRO_CONFIG = 0x1B
