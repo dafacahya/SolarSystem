@@ -62,8 +62,6 @@ def save_predictions_to_csv(timestamps, predictions, ephem_data, output_path):
         'Timestamp': [dt.strftime('%Y-%m-%d %H:%M:%S') for dt in timestamps],
         'Predicted_Azimuth': predictions[:, 0],
         'Predicted_Altitude': predictions[:, 1],
-        'Ephem_Azimuth': ephem_data[:, 0],
-        'Ephem_Altitude': ephem_data[:, 1]
     })
     df.to_csv(output_path, index=False, sep=';')
 

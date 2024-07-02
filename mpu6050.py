@@ -47,9 +47,6 @@ def read_raw_data(addr):
 # Inisialisasi MPU6050
 MPU_Init()
 
-# Inisialisasi MPU6050
-MPU_Init()
-
 try:
     while True:
         # Membaca data akselerometer

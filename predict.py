@@ -5,7 +5,6 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime, timedelta
-import ephem
 
 # Custom loss function
 @tf.keras.utils.register_keras_serializable()
@@ -52,46 +51,18 @@ def predict_with_models(models, X):
         # Reshape X for the model
         X_reshaped = np.expand_dims(X, axis=-1)  # Add feature dimension
         y_pred = model.predict(X_reshaped)
-        y_pred_sum += np.squeeze(y_pred, axis=0)  # Aggregate predictions across models
+        y_pred_sum += y_pred  # Aggregate predictions across models
     y_pred_avg = y_pred_sum / len(models)
     return y_pred_avg
 
 # Function to save predictions to CSV file
-def save_predictions_to_csv(timestamps, predictions, ephem_data, output_path):
+def save_predictions_to_csv(timestamps, predictions, output_path):
     df = pd.DataFrame({
         'Timestamp': [dt.strftime('%Y-%m-%d %H:%M:%S') for dt in timestamps],
         'Predicted_Azimuth': predictions[:, 0],
-        'Predicted_Altitude': predictions[:, 1],
-        'Ephem_Azimuth': ephem_data[:, 0],
-        'Ephem_Altitude': ephem_data[:, 1]
+        'Predicted_Altitude': predictions[:, 1]
     })
     df.to_csv(output_path, index=False, sep=';')
-
-# Function to get ephem data
-def get_ephem_data(timestamps, latitude, longitude):
-    ephem_data = []
-    observer = ephem.Observer()
-    observer.lat = str(latitude)
-    observer.lon = str(longitude)
-
-    sun = ephem.Sun()
-    for timestamp in timestamps:
-        observer.date = timestamp
-        sun.compute(observer)
-        azimuth = np.degrees(sun.az)
-        altitude = np.degrees(sun.alt)
-        ephem_data.append((azimuth, altitude))
-
-    return np.array(ephem_data)
-
-# Function to validate and adjust predictions
-def validate_and_adjust_prediction(predictions, ephem_data):
-    adjusted_predictions = []
-    for pred, ephem in zip(predictions, ephem_data):
-        azimuth_adjusted = ephem[0] + np.random.uniform(-0.05, 0.05)
-        altitude_adjusted = ephem[1] + np.random.uniform(-0.05, 0.05)
-        adjusted_predictions.append((azimuth_adjusted, altitude_adjusted))
-    return np.array(adjusted_predictions)
 
 # Main function to run the prediction process
 def main():
@@ -116,12 +87,8 @@ def main():
     predictions = predict_with_models(models, X)
     predictions = scaler.inverse_transform(predictions)
 
-    ephem_data = get_ephem_data(timestamps, latitude, longitude)
-
-    predictions = validate_and_adjust_prediction(predictions, ephem_data)
-
     output_path = os.path.join(main_folder, f'predictions_{start_date.year}_to_{start_date.year + num_years - 1}.csv')
-    save_predictions_to_csv(timestamps, predictions, ephem_data, output_path)
+    save_predictions_to_csv(timestamps, predictions, output_path)
 
     print(f"Predictions saved to '{output_path}'")
 
