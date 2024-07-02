@@ -111,6 +111,7 @@ def main():
 
     X, scaler = preprocess_timestamps(timestamps)
     X = X.reshape((X.shape[0], 1, 1))  # Reshape for LSTM input
+    X = np.repeat(X, 3, axis=2)
 
     predictions = predict_with_models(models, X)
     predictions = scaler.inverse_transform(predictions)
