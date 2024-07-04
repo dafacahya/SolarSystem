@@ -22,7 +22,7 @@ MPU6050_REG_ACCEL_ZOUT_H = 0x3F
 RELAY_PIN_1 = port.PI0  # Ganti dengan pin GPIO yang sesuai
 RELAY_PIN_2 = port.PI15  # Ganti dengan pin GPIO yang sesuai
 RELAY_PIN_3 = port.PI12  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_4 = port.PC2  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_4 = port.PI2  # Ganti dengan pin GPIO yang sesuai
 
 # Inisialisasi pin relay sebagai output
 gpio.init()
