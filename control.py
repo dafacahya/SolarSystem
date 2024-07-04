@@ -7,7 +7,7 @@ import numpy as np
 import os
 
 # Inisialisasi SMBus untuk komunikasi I2C dengan MPU-6050
-bus = smbus.SMBus(0)  # Jika menggunakan Orange Pi, gunakan SMBus(0)
+bus = smbus.SMBus(1)  # Jika menggunakan Orange Pi, gunakan SMBus(0)
 
 # Alamat I2C dari MPU-6050
 MPU6050_ADDR = 0x68
