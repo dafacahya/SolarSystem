@@ -1,10 +1,11 @@
 import smbus
-import OPi.GPIO as GPIO
 import time
 from math import atan2, degrees, sin, cos
 import pandas as pd
 import numpy as np
 import os
+from pyA20.gpio import gpio
+from pyA20.gpio import port
 
 # Inisialisasi SMBus untuk komunikasi I2C dengan MPU-6050
 bus = smbus.SMBus(1)  # Jika menggunakan Orange Pi, gunakan SMBus(0)
@@ -18,17 +19,17 @@ MPU6050_REG_ACCEL_YOUT_H = 0x3D
 MPU6050_REG_ACCEL_ZOUT_H = 0x3F
 
 # Konfigurasi pin GPIO untuk relay
-GPIO.setmode(GPIO.BOARD)  # Gunakan penomoran pin fisik
-RELAY_PIN_1 = 12  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_2 = 18  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_3 = 29  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_4 = 30  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_1 = port.PA12  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_2 = port.PA18  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_3 = port.PA20  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_4 = port.PA21  # Ganti dengan pin GPIO yang sesuai
 
 # Inisialisasi pin relay sebagai output
-GPIO.setup(RELAY_PIN_1, GPIO.OUT)
-GPIO.setup(RELAY_PIN_2, GPIO.OUT)
-GPIO.setup(RELAY_PIN_3, GPIO.OUT)
-GPIO.setup(RELAY_PIN_4, GPIO.OUT)
+gpio.init()
+gpio.setcfg(RELAY_PIN_1, gpio.OUTPUT)
+gpio.setcfg(RELAY_PIN_2, gpio.OUTPUT)
+gpio.setcfg(RELAY_PIN_3, gpio.OUTPUT)
+gpio.setcfg(RELAY_PIN_4, gpio.OUTPUT)
 
 # Fungsi untuk membaca data dari MPU-6050
 def read_mpu6050_data():
@@ -49,21 +50,21 @@ def read_mpu6050_data():
 # Fungsi untuk menggerakkan relay berdasarkan azimuth dan altitude
 def control_relay(predicted_azimuth, predicted_altitude):
     if predicted_azimuth < 90:
-        GPIO.output(RELAY_PIN_1, GPIO.HIGH)
+        gpio.output(RELAY_PIN_1, gpio.HIGH)
         time.sleep(1)
-        GPIO.output(RELAY_PIN_1, GPIO.LOW)
+        gpio.output(RELAY_PIN_1, gpio.LOW)
     elif predicted_azimuth < 180:
-        GPIO.output(RELAY_PIN_2, GPIO.HIGH)
+        gpio.output(RELAY_PIN_2, gpio.HIGH)
         time.sleep(1)
-        GPIO.output(RELAY_PIN_2, GPIO.LOW)
+        gpio.output(RELAY_PIN_2, gpio.LOW)
     elif predicted_azimuth < 270:
-        GPIO.output(RELAY_PIN_3, GPIO.HIGH)
+        gpio.output(RELAY_PIN_3, gpio.HIGH)
         time.sleep(1)
-        GPIO.output(RELAY_PIN_3, GPIO.LOW)
+        gpio.output(RELAY_PIN_3, gpio.LOW)
     else:
-        GPIO.output(RELAY_PIN_4, GPIO.HIGH)
+        gpio.output(RELAY_PIN_4, gpio.HIGH)
         time.sleep(1)
-        GPIO.output(RELAY_PIN_4, GPIO.LOW)
+        gpio.output(RELAY_PIN_4, gpio.LOW)
 
 # Fungsi untuk menghitung azimuth dan altitude berdasarkan data MPU-6050
 def calculate_azimuth_altitude(accel_x, accel_y, accel_z):
@@ -127,8 +128,8 @@ if __name__ == "__main__":
         print(e)
     finally:
         # Matikan semua relay dan atur pin GPIO ke kondisi awal
-        GPIO.output(RELAY_PIN_1, GPIO.LOW)
-        GPIO.output(RELAY_PIN_2, GPIO.LOW)
-        GPIO.output(RELAY_PIN_3, GPIO.LOW)
-        GPIO.output(RELAY_PIN_4, GPIO.LOW)
-        GPIO.cleanup()
+        gpio.output(RELAY_PIN_1, gpio.LOW)
+        gpio.output(RELAY_PIN_2, gpio.LOW)
+        gpio.output(RELAY_PIN_3, gpio.LOW)
+        gpio.output(RELAY_PIN_4, gpio.LOW)
+        gpio.cleanup()
