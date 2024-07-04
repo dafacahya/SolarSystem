@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 import os
-from math import atan2, degrees, sin, cos
+from math import atan2, degrees
 from pyA20.gpio import gpio
 from pyA20.gpio import port
 from pyA20.i2c import i2c
@@ -15,10 +15,10 @@ MPU6050_REG_ACCEL_YOUT_H = 0x3D
 MPU6050_REG_ACCEL_ZOUT_H = 0x3F
 
 # Konfigurasi pin GPIO untuk relay
-RELAY_PIN_1 = port.PI0  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_2 = port.PI15  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_3 = port.PI12  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_4 = port.PI2  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_1 = port.PA19
+RELAY_PIN_2 = port.PA20
+RELAY_PIN_3 = port.PA22
+RELAY_PIN_4 = port.PA23
 
 # Inisialisasi pin relay sebagai output
 gpio.init()
@@ -30,8 +30,8 @@ gpio.setcfg(RELAY_PIN_4, gpio.OUTPUT)
 # Fungsi untuk membaca data dari MPU-6050
 def read_mpu6050_data():
     def read_word(reg):
-        high = i2c.read_u8()
-        low = i2c.read_u8()
+        high = i2c.read_u8(reg)
+        low = i2c.read_u8(reg + 1)
         value = (high << 8) + low
         if value >= 0x8000:
             value = -((65535 - value) + 1)
@@ -100,6 +100,7 @@ if __name__ == "__main__":
 
             # Hitung azimuth dari data MPU-6050
             azimuth = calculate_azimuth(accel_x, accel_y, accel_z)
+            print(f"Calculated azimuth: {azimuth}")
 
             # Kontrol relay berdasarkan azimuth yang diprediksi
             control_relay(azimuth)
@@ -110,6 +111,8 @@ if __name__ == "__main__":
         print("Program stopped by user")
     except FileNotFoundError as e:
         print(e)
+    except Exception as e:
+        print("Unexpected error:", e)
     finally:
         # Matikan semua relay
         gpio.output(RELAY_PIN_1, gpio.LOW)
