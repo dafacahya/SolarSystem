@@ -19,10 +19,10 @@ MPU6050_REG_ACCEL_ZOUT_H = 0x3F
 
 # Konfigurasi pin GPIO untuk relay
 GPIO.setmode(GPIO.BOARD)  # Gunakan penomoran pin fisik
-RELAY_PIN_1 = 11  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_2 = 12  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_3 = 13  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_4 = 15  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_1 = 12  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_2 = 18  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_3 = 29  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_4 = 30  # Ganti dengan pin GPIO yang sesuai
 
 # Inisialisasi pin relay sebagai output
 GPIO.setup(RELAY_PIN_1, GPIO.OUT)
