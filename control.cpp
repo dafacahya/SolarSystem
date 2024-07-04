@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <time.h>
-#include <unistd.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
 
 // Alamat I2C dari MPU-6050
 #define MPU6050_ADDR 0x68
@@ -19,6 +19,14 @@
 #define RELAY_PIN_3 22
 #define RELAY_PIN_4 23
 
+// Prototipe fungsi
+void initialize_gpio();
+void read_mpu6050_data(int *accel_x, int *accel_y, int *accel_z);
+float calculate_azimuth(int accel_x, int accel_y, int accel_z);
+void control_relay(float predicted_azimuth);
+void read_predicted_data(char *csv_file, int *timestamps, float *azimuths, int max_rows);
+void find_csv_file(char *directory, char *csv_file);
+
 // Inisialisasi pin relay sebagai output
 void initialize_gpio() {
     // Kode untuk menginisialisasi GPIO sesuai dengan platform atau board yang digunakan
@@ -28,6 +36,13 @@ void initialize_gpio() {
 // Fungsi untuk membaca data dari MPU-6050
 void read_mpu6050_data(int *accel_x, int *accel_y, int *accel_z) {
     // Kode untuk membaca data dari MPU-6050 menggunakan I2C
+}
+
+// Fungsi untuk menghitung azimuth berdasarkan data MPU-6050
+float calculate_azimuth(int accel_x, int accel_y, int accel_z) {
+    float roll = atan2(accel_y, accel_z);
+    float azimuth = degrees(roll);
+    return azimuth;
 }
 
 // Fungsi untuk menggerakkan relay berdasarkan azimuth
@@ -43,17 +58,17 @@ void control_relay(float predicted_azimuth) {
     }
 }
 
-// Fungsi untuk menghitung azimuth berdasarkan data MPU-6050
-float calculate_azimuth(int accel_x, int accel_y, int accel_z) {
-    // Kode untuk menghitung azimuth menggunakan atan2 dan konversi ke derajat
-}
-
 // Fungsi untuk membaca data prediksi dari file CSV
 void read_predicted_data(char *csv_file, int *timestamps, float *azimuths, int max_rows) {
     // Kode untuk membaca data prediksi dari file CSV
 }
 
-// Fungsi utama
+// Fungsi untuk mencari file CSV di direktori tertentu
+void find_csv_file(char *directory, char *csv_file) {
+    // Kode untuk mencari file CSV di direktori tertentu
+}
+
+// Fungsi main
 int main() {
     char directory[] = "Main_Folder";  // Ganti dengan direktori yang sesuai
 
