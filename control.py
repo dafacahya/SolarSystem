@@ -114,4 +114,5 @@ if __name__ == "__main__":
         # Matikan semua relay
         gpio.output(RELAY_PIN_1, gpio.LOW)
         gpio.output(RELAY_PIN_2, gpio.LOW)
-        gpio.output(RELAY_PIN_3
+        gpio.output(RELAY_PIN_3, gpio.LOW)
+        gpio.output(RELAY_PIN_4, gpio.LOW)
