@@ -24,22 +24,30 @@ RELAY_PIN_2 = port.PI15  # Ganti dengan pin GPIO yang sesuai
 RELAY_PIN_3 = port.PI12  # Ganti dengan pin GPIO yang sesuai
 RELAY_PIN_4 = port.PI2  # Ganti dengan pin GPIO yang sesuai
 
-# Inisialisasi pin relay sebagai output
-gpio.init()
-gpio.setcfg(RELAY_PIN_1, gpio.OUTPUT)
-gpio.setcfg(RELAY_PIN_2, gpio.OUTPUT)
-gpio.setcfg(RELAY_PIN_3, gpio.OUTPUT)
-gpio.setcfg(RELAY_PIN_4, gpio.OUTPUT)
+# Inisialisasi GPIO
+try:
+    gpio.init()
+    gpio.setcfg(RELAY_PIN_1, gpio.OUTPUT)
+    gpio.setcfg(RELAY_PIN_2, gpio.OUTPUT)
+    gpio.setcfg(RELAY_PIN_3, gpio.OUTPUT)
+    gpio.setcfg(RELAY_PIN_4, gpio.OUTPUT)
+except Exception as e:
+    print(f"Error initializing GPIO: {e}")
+    exit(1)
 
 # Fungsi untuk membaca data dari MPU-6050
 def read_mpu6050_data():
     def read_word(reg):
-        high = bus.read_byte_data(MPU6050_ADDR, reg)
-        low = bus.read_byte_data(MPU6050_ADDR, reg + 1)
-        value = (high << 8) + low
-        if value >= 0x8000:
-            value = -((65535 - value) + 1)
-        return value
+        try:
+            high = bus.read_byte_data(MPU6050_ADDR, reg)
+            low = bus.read_byte_data(MPU6050_ADDR, reg + 1)
+            value = (high << 8) + low
+            if value >= 0x8000:
+                value = -((65535 - value) + 1)
+            return value
+        except Exception as e:
+            print(f"Error reading data from MPU-6050: {e}")
+            return 0
 
     accel_x = read_word(MPU6050_REG_ACCEL_XOUT_H)
     accel_y = read_word(MPU6050_REG_ACCEL_YOUT_H)
@@ -49,22 +57,25 @@ def read_mpu6050_data():
 
 # Fungsi untuk menggerakkan relay berdasarkan azimuth dan altitude
 def control_relay(predicted_azimuth, predicted_altitude):
-    if predicted_azimuth < 90:
-        gpio.output(RELAY_PIN_1, gpio.HIGH)
-        time.sleep(1)
-        gpio.output(RELAY_PIN_1, gpio.LOW)
-    elif predicted_azimuth < 180:
-        gpio.output(RELAY_PIN_2, gpio.HIGH)
-        time.sleep(1)
-        gpio.output(RELAY_PIN_2, gpio.LOW)
-    elif predicted_azimuth < 270:
-        gpio.output(RELAY_PIN_3, gpio.HIGH)
-        time.sleep(1)
-        gpio.output(RELAY_PIN_3, gpio.LOW)
-    else:
-        gpio.output(RELAY_PIN_4, gpio.HIGH)
-        time.sleep(1)
-        gpio.output(RELAY_PIN_4, gpio.LOW)
+    try:
+        if predicted_azimuth < 90:
+            gpio.output(RELAY_PIN_1, gpio.HIGH)
+            time.sleep(1)
+            gpio.output(RELAY_PIN_1, gpio.LOW)
+        elif predicted_azimuth < 180:
+            gpio.output(RELAY_PIN_2, gpio.HIGH)
+            time.sleep(1)
+            gpio.output(RELAY_PIN_2, gpio.LOW)
+        elif predicted_azimuth < 270:
+            gpio.output(RELAY_PIN_3, gpio.HIGH)
+            time.sleep(1)
+            gpio.output(RELAY_PIN_3, gpio.LOW)
+        else:
+            gpio.output(RELAY_PIN_4, gpio.HIGH)
+            time.sleep(1)
+            gpio.output(RELAY_PIN_4, gpio.LOW)
+    except Exception as e:
+        print(f"Error controlling relay: {e}")
 
 # Fungsi untuk menghitung azimuth dan altitude berdasarkan data MPU-6050
 def calculate_azimuth_altitude(accel_x, accel_y, accel_z):
@@ -126,6 +137,8 @@ if __name__ == "__main__":
         print("Program stopped by user")
     except FileNotFoundError as e:
         print(e)
+    except Exception as e:
+        print(f"An error occurred: {e}")
     finally:
         # Matikan semua relay dan atur pin GPIO ke kondisi awal
         gpio.output(RELAY_PIN_1, gpio.LOW)
