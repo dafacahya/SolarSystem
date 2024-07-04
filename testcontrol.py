@@ -1,4 +1,4 @@
-import wiringpi
+import wiringop
 import time
 import pandas as pd
 import os
@@ -19,23 +19,23 @@ RELAY_PIN_3 = 22  # Ganti dengan pin GPIO yang sesuai (misalnya BCM: 27)
 RELAY_PIN_4 = 23  # Ganti dengan pin GPIO yang sesuai (misalnya BCM: 22)
 
 # Inisialisasi pin relay sebagai output
-wiringpi.wiringPiSetup()
-wiringpi.pinMode(RELAY_PIN_1, wiringpi.OUTPUT)
-wiringpi.pinMode(RELAY_PIN_2, wiringpi.OUTPUT)
-wiringpi.pinMode(RELAY_PIN_3, wiringpi.OUTPUT)
-wiringpi.pinMode(RELAY_PIN_4, wiringpi.OUTPUT)
+wiringop.wiringPiSetup()
+wiringop.pinMode(RELAY_PIN_1, wiringop.OUTPUT)
+wiringop.pinMode(RELAY_PIN_2, wiringop.OUTPUT)
+wiringop.pinMode(RELAY_PIN_3, wiringop.OUTPUT)
+wiringop.pinMode(RELAY_PIN_4, wiringop.OUTPUT)
 
 # Fungsi untuk membaca data dari MPU-6050
 def read_mpu6050_data():
     def read_word(reg):
-        high = wiringpi.wiringPiI2CReadReg8(fd, reg)
-        low = wiringpi.wiringPiI2CReadReg8(fd, reg + 1)
+        high = wiringop.wiringPiI2CReadReg8(fd, reg)
+        low = wiringop.wiringPiI2CReadReg8(fd, reg + 1)
         value = (high << 8) + low
         if value >= 0x8000:
             value = -((65535 - value) + 1)
         return value
 
-    fd = wiringpi.wiringPiI2CSetup(MPU6050_ADDR)
+    fd = wiringop.wiringPiI2CSetup(MPU6050_ADDR)
     accel_x = read_word(MPU6050_REG_ACCEL_XOUT_H)
     accel_y = read_word(MPU6050_REG_ACCEL_YOUT_H)
     accel_z = read_word(MPU6050_REG_ACCEL_ZOUT_H)
@@ -44,21 +44,21 @@ def read_mpu6050_data():
 # Fungsi untuk menggerakkan relay berdasarkan azimuth
 def control_relay(predicted_azimuth):
     if predicted_azimuth < 90:
-        wiringpi.digitalWrite(RELAY_PIN_1, wiringpi.HIGH)
+        wiringop.digitalWrite(RELAY_PIN_1, wiringop.HIGH)
         time.sleep(1)
-        wiringpi.digitalWrite(RELAY_PIN_1, wiringpi.LOW)
+        wiringop.digitalWrite(RELAY_PIN_1, wiringop.LOW)
     elif predicted_azimuth < 180:
-        wiringpi.digitalWrite(RELAY_PIN_2, wiringpi.HIGH)
+        wiringop.digitalWrite(RELAY_PIN_2, wiringop.HIGH)
         time.sleep(1)
-        wiringpi.digitalWrite(RELAY_PIN_2, wiringpi.LOW)
+        wiringop.digitalWrite(RELAY_PIN_2, wiringop.LOW)
     elif predicted_azimuth < 270:
-        wiringpi.digitalWrite(RELAY_PIN_3, wiringpi.HIGH)
+        wiringop.digitalWrite(RELAY_PIN_3, wiringop.HIGH)
         time.sleep(1)
-        wiringpi.digitalWrite(RELAY_PIN_3, wiringpi.LOW)
+        wiringop.digitalWrite(RELAY_PIN_3, wiringop.LOW)
     else:
-        wiringpi.digitalWrite(RELAY_PIN_4, wiringpi.HIGH)
+        wiringop.digitalWrite(RELAY_PIN_4, wiringop.HIGH)
         time.sleep(1)
-        wiringpi.digitalWrite(RELAY_PIN_4, wiringpi.LOW)
+        wiringop.digitalWrite(RELAY_PIN_4, wiringop.LOW)
 
 # Fungsi untuk menghitung azimuth berdasarkan data MPU-6050
 def calculate_azimuth(accel_x, accel_y, accel_z):
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         print(e)
     finally:
         # Matikan semua relay
-        wiringpi.digitalWrite(RELAY_PIN_1, wiringpi.LOW)
-        wiringpi.digitalWrite(RELAY_PIN_2, wiringpi.LOW)
-        wiringpi.digitalWrite(RELAY_PIN_3, wiringpi.LOW)
-        wiringpi.digitalWrite(RELAY_PIN_4, wiringpi.LOW)
+        wiringop.digitalWrite(RELAY_PIN_1, wiringop.LOW)
+        wiringop.digitalWrite(RELAY_PIN_2, wiringop.LOW)
+        wiringop.digitalWrite(RELAY_PIN_3, wiringop.LOW)
+        wiringop.digitalWrite(RELAY_PIN_4, wiringop.LOW)
