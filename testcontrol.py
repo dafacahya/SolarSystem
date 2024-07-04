@@ -2,7 +2,6 @@ import wiringpi
 import time
 import pandas as pd
 import os
-from math import atan2, degrees, sin, cos
 
 # Alamat I2C dari MPU-6050
 MPU6050_ADDR = 0x68
