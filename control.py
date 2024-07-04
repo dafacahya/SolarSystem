@@ -19,10 +19,10 @@ MPU6050_REG_ACCEL_YOUT_H = 0x3D
 MPU6050_REG_ACCEL_ZOUT_H = 0x3F
 
 # Konfigurasi pin GPIO untuk relay
-RELAY_PIN_1 = port.PA12  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_2 = port.PA18  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_3 = port.PA20  # Ganti dengan pin GPIO yang sesuai
-RELAY_PIN_4 = port.PA21  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_1 = port.PI1  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_2 = port.PH4  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_3 = port.PI2  # Ganti dengan pin GPIO yang sesuai
+RELAY_PIN_4 = port.PC12  # Ganti dengan pin GPIO yang sesuai
 
 # Inisialisasi pin relay sebagai output
 gpio.init()
