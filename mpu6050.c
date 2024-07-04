@@ -25,6 +25,24 @@
 
 int i2c_fd;
 
+void i2c_smbus_write_byte_data(int file, uint8_t command, uint8_t value) {
+    uint8_t buffer[2] = {command, value};
+    if (write(file, buffer, 2) != 2) {
+        perror("Failed to write to the i2c bus");
+    }
+}
+
+int8_t i2c_smbus_read_byte_data(int file, uint8_t command) {
+    if (write(file, &command, 1) != 1) {
+        perror("Failed to write to the i2c bus");
+    }
+    uint8_t value;
+    if (read(file, &value, 1) != 1) {
+        perror("Failed to read from the i2c bus");
+    }
+    return value;
+}
+
 void MPU_Init() {
     // Menulis ke register manajemen daya untuk membangunkan sensor
     i2c_smbus_write_byte_data(i2c_fd, PWR_MGMT_1, 0);
