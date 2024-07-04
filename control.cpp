@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <stdbool.h>
+#include <iostream>
+#include <cmath>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
 #include <unistd.h>
-#include <string.h>
 
 // Alamat I2C dari MPU-6050
 #define MPU6050_ADDR 0x68
@@ -13,92 +13,144 @@
 #define MPU6050_REG_ACCEL_YOUT_H 0x3D
 #define MPU6050_REG_ACCEL_ZOUT_H 0x3F
 
-// Definisi pin GPIO untuk relay
-#define RELAY_PIN_1 19
-#define RELAY_PIN_2 20
-#define RELAY_PIN_3 22
-#define RELAY_PIN_4 23
-
-// Prototipe fungsi
-void initialize_gpio();
-void read_mpu6050_data(int *accel_x, int *accel_y, int *accel_z);
-float calculate_azimuth(int accel_x, int accel_y, int accel_z);
-void control_relay(float predicted_azimuth);
-void read_predicted_data(char *csv_file, int *timestamps, float *azimuths, int max_rows);
-void find_csv_file(char *directory, char *csv_file);
-
-// Inisialisasi pin relay sebagai output
-void initialize_gpio() {
-    // Kode untuk menginisialisasi GPIO sesuai dengan platform atau board yang digunakan
-    // Contoh: Raspberry Pi menggunakan wiringPi atau RPi.GPIO
-}
+// Konfigurasi pin GPIO untuk relay azimuth (pan) dan altitude (tilt)
+#define RELAY_PIN_AZIMUTH_UP 19
+#define RELAY_PIN_AZIMUTH_DOWN 20
+#define RELAY_PIN_ALTITUDE_UP 22
+#define RELAY_PIN_ALTITUDE_DOWN 23
 
 // Fungsi untuk membaca data dari MPU-6050
-void read_mpu6050_data(int *accel_x, int *accel_y, int *accel_z) {
+void read_mpu6050_data(int &accel_x, int &accel_y, int &accel_z) {
     // Kode untuk membaca data dari MPU-6050 menggunakan I2C
 }
 
-// Fungsi untuk menghitung azimuth berdasarkan data MPU-6050
+// Fungsi untuk menghitung azimuth (pan) berdasarkan data MPU-6050
 float calculate_azimuth(int accel_x, int accel_y, int accel_z) {
-    float roll = atan2(accel_y, accel_z);
-    float azimuth = degrees(roll);
+    float roll = atan2((float)accel_y, (float)accel_z);
+    float azimuth = roll * (180.0 / M_PI);  // Konversi radian ke derajat
+    if (azimuth < 0) {
+        azimuth += 360.0;  // Pastikan azimuth dalam rentang 0-360 derajat
+    }
     return azimuth;
 }
 
-// Fungsi untuk menggerakkan relay berdasarkan azimuth
-void control_relay(float predicted_azimuth) {
-    if (predicted_azimuth < 90) {
-        // Kode untuk mengaktifkan relay 1
-    } else if (predicted_azimuth < 180) {
-        // Kode untuk mengaktifkan relay 2
-    } else if (predicted_azimuth < 270) {
-        // Kode untuk mengaktifkan relay 3
+// Fungsi untuk menghitung altitude (tilt) berdasarkan data MPU-6050
+float calculate_altitude(int accel_x, int accel_y, int accel_z) {
+    float pitch = atan2((float)-accel_x, sqrt((float)accel_y * accel_y + (float)accel_z * accel_z));
+    float altitude = pitch * (180.0 / M_PI);  // Konversi radian ke derajat
+    if (altitude < 0) {
+        altitude += 360.0;  // Pastikan altitude dalam rentang 0-360 derajat
+    }
+    return altitude;
+}
+
+// Fungsi untuk menggerakkan relay azimuth (pan) berdasarkan azimuth yang diprediksi
+void control_azimuth_relay(float predicted_azimuth) {
+    if (predicted_azimuth < 180) {
+        // Aktifkan relay untuk azimuth naik
+        std::cout << "Activate RELAY_PIN_AZIMUTH_UP" << std::endl;
     } else {
-        // Kode untuk mengaktifkan relay 4
+        // Aktifkan relay untuk azimuth turun
+        std::cout << "Activate RELAY_PIN_AZIMUTH_DOWN" << std::endl;
+    }
+}
+
+// Fungsi untuk menggerakkan relay altitude (tilt) berdasarkan altitude yang diprediksi
+void control_altitude_relay(float predicted_altitude) {
+    if (predicted_altitude < 180) {
+        // Aktifkan relay untuk altitude naik
+        std::cout << "Activate RELAY_PIN_ALTITUDE_UP" << std::endl;
+    } else {
+        // Aktifkan relay untuk altitude turun
+        std::cout << "Activate RELAY_PIN_ALTITUDE_DOWN" << std::endl;
     }
 }
 
 // Fungsi untuk membaca data prediksi dari file CSV
-void read_predicted_data(char *csv_file, int *timestamps, float *azimuths, int max_rows) {
-    // Kode untuk membaca data prediksi dari file CSV
+void read_predicted_data(const std::string &csv_file, std::vector<int> &timestamps, std::vector<float> &azimuths, std::vector<float> &altitudes) {
+    std::ifstream file(csv_file);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open CSV file");
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string timestamp_str, azimuth_str, altitude_str;
+        if (std::getline(ss, timestamp_str, ';') && std::getline(ss, azimuth_str, ';') && std::getline(ss, altitude_str, ';')) {
+            timestamps.push_back(std::stoi(timestamp_str));
+            azimuths.push_back(std::stof(azimuth_str));
+            altitudes.push_back(std::stof(altitude_str));
+        }
+    }
+
+    file.close();
 }
 
 // Fungsi untuk mencari file CSV di direktori tertentu
-void find_csv_file(char *directory, char *csv_file) {
-    // Kode untuk mencari file CSV di direktori tertentu
+std::string find_csv_file(const std::string &directory) {
+    std::string csv_file;
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir(directory.c_str())) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            std::string filename = ent->d_name;
+            if (filename.length() > 4 && filename.substr(filename.length() - 4) == ".csv") {
+                csv_file = filename;
+                break;
+            }
+        }
+        closedir(dir);
+    } else {
+        throw std::runtime_error("Failed to open directory");
+    }
+
+    if (csv_file.empty()) {
+        throw std::runtime_error("No CSV file found in directory");
+    }
+
+    return csv_file;
 }
 
-// Fungsi main
 int main() {
-    char directory[] = "Main_Folder";  // Ganti dengan direktori yang sesuai
+    try {
+        // Temukan file CSV di direktori Main_Folder
+        std::string directory = "Main_Folder";  // Ganti dengan direktori yang sesuai
+        std::string csv_file = find_csv_file(directory);
+        std::cout << "Using CSV file: " << csv_file << std::endl;
 
-    // Temukan file CSV di direktori Main_Folder
-    char csv_file[256];
-    find_csv_file(directory, csv_file);
+        // Baca data prediksi dari file CSV
+        std::vector<int> timestamps;
+        std::vector<float> azimuths;
+        std::vector<float> altitudes;
+        read_predicted_data(directory + "/" + csv_file, timestamps, azimuths, altitudes);
 
-    // Baca data prediksi dari file CSV
-    int timestamps[100];  // Ubah ukuran array sesuai kebutuhan
-    float azimuths[100];  // Ubah ukuran array sesuai kebutuhan
-    read_predicted_data(csv_file, timestamps, azimuths, 100);
+        // Inisialisasi GPIO atau konfigurasi pin relay
+        // initialize_gpio(); // Jika menggunakan GPIO, aktifkan sesuai kebutuhan
 
-    // Inisialisasi GPIO
-    initialize_gpio();
+        while (true) {
+            // Baca data dari MPU-6050
+            int accel_x, accel_y, accel_z;
+            read_mpu6050_data(accel_x, accel_y, accel_z);
 
-    while (true) {
-        // Variabel untuk menyimpan data dari MPU-6050
-        int accel_x, accel_y, accel_z;
+            // Hitung azimuth (pan) dari data MPU-6050
+            float azimuth = calculate_azimuth(accel_x, accel_y, accel_z);
+            std::cout << "Calculated azimuth (pan): " << azimuth << std::endl;
 
-        // Baca data dari MPU-6050
-        read_mpu6050_data(&accel_x, &accel_y, &accel_z);
+            // Hitung altitude (tilt) dari data MPU-6050
+            float altitude = calculate_altitude(accel_x, accel_y, accel_z);
+            std::cout << "Calculated altitude (tilt): " << altitude << std::endl;
 
-        // Hitung azimuth dari data MPU-6050
-        float azimuth = calculate_azimuth(accel_x, accel_y, accel_z);
-        printf("Calculated azimuth: %.2f\n", azimuth);
+            // Kontrol relay azimuth (pan) berdasarkan azimuth yang diprediksi
+            control_azimuth_relay(azimuth);
 
-        // Kontrol relay berdasarkan azimuth yang diprediksi
-        control_relay(azimuth);
+            // Kontrol relay altitude (tilt) berdasarkan altitude yang diprediksi
+            control_altitude_relay(altitude);
 
-        sleep(1);  // Tunggu sebelum membaca data berikutnya
+            sleep(1);  // Tunggu sebelum membaca data berikutnya
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
     }
 
     return 0;
