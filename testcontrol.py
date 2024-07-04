@@ -7,7 +7,7 @@ from pyA20.i2c import i2c
 gpio.init()
 
 # Configure a GPIO pin for testing
-TEST_PIN = port.PA19
+TEST_PIN = port.PI15
 gpio.setcfg(TEST_PIN, gpio.OUTPUT)
 
 # Initialize I2C
