@@ -4,6 +4,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <unistd.h>
+#include <vector>   // Added for std::vector
+#include <dirent.h> // Added for directory operations
 
 // Alamat I2C dari MPU-6050
 #define MPU6050_ADDR 0x68
@@ -125,26 +127,17 @@ int main() {
         std::vector<float> altitudes;
         read_predicted_data(directory + "/" + csv_file, timestamps, azimuths, altitudes);
 
-        // Inisialisasi GPIO atau konfigurasi pin relay
-        // initialize_gpio(); // Jika menggunakan GPIO, aktifkan sesuai kebutuhan
-
         while (true) {
             // Baca data dari MPU-6050
             int accel_x, accel_y, accel_z;
             read_mpu6050_data(accel_x, accel_y, accel_z);
 
-            // Hitung azimuth (pan) dari data MPU-6050
+            // Hitung azimuth dan altitude
             float azimuth = calculate_azimuth(accel_x, accel_y, accel_z);
-            std::cout << "Calculated azimuth (pan): " << azimuth << std::endl;
-
-            // Hitung altitude (tilt) dari data MPU-6050
             float altitude = calculate_altitude(accel_x, accel_y, accel_z);
-            std::cout << "Calculated altitude (tilt): " << altitude << std::endl;
 
-            // Kontrol relay azimuth (pan) berdasarkan azimuth yang diprediksi
+            // Kontrol relay azimuth dan altitude
             control_azimuth_relay(azimuth);
-
-            // Kontrol relay altitude (tilt) berdasarkan altitude yang diprediksi
             control_altitude_relay(altitude);
 
             sleep(1);  // Tunggu sebelum membaca data berikutnya
