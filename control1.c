@@ -70,11 +70,14 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
         char date[20], time[20];
         float predict_azimuth, predict_altitude;
 
-        if (sscanf(line, "%19[^,],%19[^,],%f,%f", date, time, &predict_azimuth, &predict_altitude) == 4) {
+        if (sscanf(line, "%19s %19s %f %f", date, time, &predict_azimuth, &predict_altitude) == 4) {
             struct tm tm_time;
             memset(&tm_time, 0, sizeof(struct tm));
-            strptime(date, "%Y-%m-%d", &tm_time); // Format tanggal yang diharapkan
-            strptime(time, "%H:%M:%S", &tm_time); // Format waktu yang diharapkan
+            tm_time.tm_year = atoi(date) - 1900;
+            tm_time.tm_mon = atoi(strtok(time, ":")) - 1;
+            tm_time.tm_hour = atoi(strtok(NULL, ":"));
+            tm_time.tm_min = atoi(strtok(NULL, ":"));
+            tm_time.tm_sec = atoi(strtok(NULL, ":"));
             time_t timestamp = mktime(&tm_time);
 
             predictions[count].azimuth = predict_azimuth;
@@ -87,7 +90,6 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
     fclose(file);
     return count; // Return the number of predictions read
 }
-
 // Fungsi untuk mendapatkan waktu saat ini
 time_t get_current_time() {
     time_t now;
