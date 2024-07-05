@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include <dirent.h>
+#include <errno.h>
 
 // I2C address of MPU-6050
 #define MPU6050_ADDR 0x68
