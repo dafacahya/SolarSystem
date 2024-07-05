@@ -58,7 +58,6 @@ float calculate_altitude(int accel_x, int accel_y, int accel_z) {
 }
 
 // Function to read predictions from CSV file
-/ Function to read predictions from CSV file
 int read_predictions_from_csv(const char *filename, Prediction *predictions, int max_predictions) {
     FILE *file = fopen(filename, "r");
     if (!file) {
