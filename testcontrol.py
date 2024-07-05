@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
 import time
-import RPi.GPIO as GPIO
+from gpiozero import DigitalOutputDevice
 import smbus
 import math
 
