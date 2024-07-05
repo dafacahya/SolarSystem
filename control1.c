@@ -160,7 +160,7 @@ int main() {
     Prediction predictions[max_predictions];
 
     // Direktori di mana file CSV disimpan
-    const char *csv_dir = "main";
+    const char *csv_dir = "Main_Folder";
 
     // Tahun awal dari file yang dibaca
     int current_year = 2024;
