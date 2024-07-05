@@ -1,115 +1,147 @@
-import wiringop
+import csv
+from datetime import datetime
 import time
-import pandas as pd
-import os
-from math import atan2, degrees, sin, cos
+import RPi.GPIO as GPIO
+import smbus
+import math
+
+# Konfigurasi pin GPIO untuk relay azimuth (pan) dan altitude (tilt)
+RELAY_PIN_AZIMUTH_UP = 20
+RELAY_PIN_AZIMUTH_DOWN = 22
+RELAY_PIN_ALTITUDE_UP = 23
+RELAY_PIN_ALTITUDE_DOWN = 25
+
+# Inisialisasi GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(RELAY_PIN_AZIMUTH_UP, GPIO.OUT)
+GPIO.setup(RELAY_PIN_AZIMUTH_DOWN, GPIO.OUT)
+GPIO.setup(RELAY_PIN_ALTITUDE_UP, GPIO.OUT)
+GPIO.setup(RELAY_PIN_ALTITUDE_DOWN, GPIO.OUT)
 
 # Alamat I2C dari MPU-6050
 MPU6050_ADDR = 0x68
 
-# Register MPU-6050 untuk data akselerometer dan gyroscope
+# Register MPU-6050 untuk data akselerometer
 MPU6050_REG_ACCEL_XOUT_H = 0x3B
 MPU6050_REG_ACCEL_YOUT_H = 0x3D
 MPU6050_REG_ACCEL_ZOUT_H = 0x3F
 
-# Konfigurasi pin GPIO untuk relay
-RELAY_PIN_1 = 19  # Ganti dengan pin GPIO yang sesuai (misalnya BCM: 17)
-RELAY_PIN_2 = 20  # Ganti dengan pin GPIO yang sesuai (misalnya BCM: 18)
-RELAY_PIN_3 = 22  # Ganti dengan pin GPIO yang sesuai (misalnya BCM: 27)
-RELAY_PIN_4 = 23  # Ganti dengan pin GPIO yang sesuai (misalnya BCM: 22)
-
-# Inisialisasi pin relay sebagai output
-wiringop.wiringPiSetup()
-wiringop.pinMode(RELAY_PIN_1, wiringop.OUTPUT)
-wiringop.pinMode(RELAY_PIN_2, wiringop.OUTPUT)
-wiringop.pinMode(RELAY_PIN_3, wiringop.OUTPUT)
-wiringop.pinMode(RELAY_PIN_4, wiringop.OUTPUT)
+# Inisialisasi I2C bus
+bus = smbus.SMBus(1)
 
 # Fungsi untuk membaca data dari MPU-6050
 def read_mpu6050_data():
-    def read_word(reg):
-        high = wiringop.wiringPiI2CReadReg8(fd, reg)
-        low = wiringop.wiringPiI2CReadReg8(fd, reg + 1)
-        value = (high << 8) + low
-        if value >= 0x8000:
-            value = -((65535 - value) + 1)
-        return value
-
-    fd = wiringop.wiringPiI2CSetup(MPU6050_ADDR)
-    accel_x = read_word(MPU6050_REG_ACCEL_XOUT_H)
-    accel_y = read_word(MPU6050_REG_ACCEL_YOUT_H)
-    accel_z = read_word(MPU6050_REG_ACCEL_ZOUT_H)
+    accel_x = read_word_2c(MPU6050_REG_ACCEL_XOUT_H)
+    accel_y = read_word_2c(MPU6050_REG_ACCEL_YOUT_H)
+    accel_z = read_word_2c(MPU6050_REG_ACCEL_ZOUT_H)
     return accel_x, accel_y, accel_z
 
-# Fungsi untuk menggerakkan relay berdasarkan azimuth
-def control_relay(predicted_azimuth):
-    if predicted_azimuth < 90:
-        wiringop.digitalWrite(RELAY_PIN_1, wiringop.HIGH)
-        time.sleep(1)
-        wiringop.digitalWrite(RELAY_PIN_1, wiringop.LOW)
-    elif predicted_azimuth < 180:
-        wiringop.digitalWrite(RELAY_PIN_2, wiringop.HIGH)
-        time.sleep(1)
-        wiringop.digitalWrite(RELAY_PIN_2, wiringop.LOW)
-    elif predicted_azimuth < 270:
-        wiringop.digitalWrite(RELAY_PIN_3, wiringop.HIGH)
-        time.sleep(1)
-        wiringop.digitalWrite(RELAY_PIN_3, wiringop.LOW)
+# Fungsi pembantu untuk membaca nilai signed 16-bit dari MPU-6050
+def read_word_2c(reg):
+    high = bus.read_byte_data(MPU6050_ADDR, reg)
+    low = bus.read_byte_data(MPU6050_ADDR, reg+1)
+    val = (high << 8) + low
+    if (val >= 0x8000):
+        return -((65535 - val) + 1)
     else:
-        wiringop.digitalWrite(RELAY_PIN_4, wiringop.HIGH)
-        time.sleep(1)
-        wiringop.digitalWrite(RELAY_PIN_4, wiringop.LOW)
+        return val
 
-# Fungsi untuk menghitung azimuth berdasarkan data MPU-6050
+# Fungsi untuk menghitung azimuth (pan) berdasarkan data MPU-6050
 def calculate_azimuth(accel_x, accel_y, accel_z):
-    roll = atan2(accel_y, accel_z)
-    azimuth = degrees(roll)
+    roll = math.atan2(accel_y, accel_z)
+    azimuth = math.degrees(roll)
+    if azimuth < 0:
+        azimuth += 360.0
     return azimuth
 
-# Fungsi untuk membaca data prediksi dari file CSV
-def read_predicted_data(csv_file):
-    df = pd.read_csv(csv_file, sep=';')
-    timestamps = pd.to_datetime(df['Timestamp'], format='%Y-%m-%d %H:%M:%S')
-    azimuths = df['Azimuth'].apply(lambda x: float(x[:-1])).values  # Hapus karakter ° dan ubah ke float
-    return timestamps, azimuths
+# Fungsi untuk menghitung altitude (tilt) berdasarkan data MPU-6050
+def calculate_altitude(accel_x, accel_y, accel_z):
+    pitch = math.atan2(-accel_x, math.sqrt(accel_y * accel_y + accel_z * accel_z))
+    altitude = math.degrees(pitch)
+    if altitude < 0:
+        altitude += 360.0
+    return altitude
 
-# Fungsi untuk mencari file CSV di direktori tertentu
-def find_csv_file(directory):
-    csv_files = [f for f in os.listdir(directory) if f.endswith('.csv')]
-    if csv_files:
-        return csv_files[0]  # Pilih file pertama yang ditemukan
+# Fungsi untuk membaca prediksi dari file CSV
+def read_predictions_from_csv(filename):
+    predictions = []
+    with open(filename, 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if len(row) == 4:
+                date_str, time_str, predict_azimuth, predict_altitude = row
+                try:
+                    timestamp = datetime.strptime(f'{date_str} {time_str}', '%Y-%m-%d %H:%M:%S')
+                    predictions.append({
+                        'timestamp': timestamp,
+                        'azimuth': float(predict_azimuth),
+                        'altitude': float(predict_altitude)
+                    })
+                except ValueError as e:
+                    print(f"Error parsing line: {row}, Error: {e}")
+    return predictions
+
+# Fungsi untuk mendapatkan waktu saat ini dalam timestamp
+def get_current_time():
+    return datetime.now()
+
+# Fungsi untuk menggerakkan relay azimuth (pan) berdasarkan azimuth yang diprediksi
+def control_azimuth_relay(predicted_azimuth, current_azimuth):
+    if abs(predicted_azimuth - current_azimuth) > 5:  # Contoh threshold perubahan sudut
+        if predicted_azimuth < current_azimuth:
+            GPIO.output(RELAY_PIN_AZIMUTH_UP, False)
+            GPIO.output(RELAY_PIN_AZIMUTH_DOWN, True)
+        else:
+            GPIO.output(RELAY_PIN_AZIMUTH_UP, True)
+            GPIO.output(RELAY_PIN_AZIMUTH_DOWN, False)
     else:
-        raise FileNotFoundError("No CSV file found in the directory.")
+        GPIO.output(RELAY_PIN_AZIMUTH_UP, False)
+        GPIO.output(RELAY_PIN_AZIMUTH_DOWN, False)
+
+# Fungsi untuk menggerakkan relay altitude (tilt) berdasarkan altitude yang diprediksi
+def control_altitude_relay(predicted_altitude, current_altitude):
+    if abs(predicted_altitude - current_altitude) > 5:  # Contoh threshold perubahan sudut
+        if predicted_altitude < current_altitude:
+            GPIO.output(RELAY_PIN_ALTITUDE_UP, False)
+            GPIO.output(RELAY_PIN_ALTITUDE_DOWN, True)
+        else:
+            GPIO.output(RELAY_PIN_ALTITUDE_UP, True)
+            GPIO.output(RELAY_PIN_ALTITUDE_DOWN, False)
+    else:
+        GPIO.output(RELAY_PIN_ALTITUDE_UP, False)
+        GPIO.output(RELAY_PIN_ALTITUDE_DOWN, False)
 
 if __name__ == "__main__":
     try:
-        # Temukan file CSV di direktori Main_Folder
-        directory = 'Main_Folder'  # Ganti dengan direktori yang sesuai
-        csv_file = find_csv_file(directory)
-        print(f"Using CSV file: {csv_file}")
+        # Baca prediksi dari CSV
+        predictions = read_predictions_from_csv('predictions.csv')
 
-        # Baca data prediksi dari file CSV
-        timestamps, azimuths = read_predicted_data(os.path.join(directory, csv_file))
-
+        # Loop utama untuk membandingkan data dari MPU-6050 dengan prediksi dari CSV
         while True:
-            # Baca data dari MPU-6050
             accel_x, accel_y, accel_z = read_mpu6050_data()
+            current_azimuth = calculate_azimuth(accel_x, accel_y, accel_z)
+            current_altitude = calculate_altitude(accel_x, accel_y, accel_z)
+            current_time = get_current_time()
 
-            # Hitung azimuth dari data MPU-6050
-            azimuth = calculate_azimuth(accel_x, accel_y, accel_z)
+            # Cari prediksi terdekat berdasarkan waktu saat ini
+            closest_prediction = None
+            for prediction in predictions:
+                if prediction['timestamp'] <= current_time:
+                    closest_prediction = prediction
+                else:
+                    break
 
-            # Kontrol relay berdasarkan azimuth yang diprediksi
-            control_relay(azimuth)
+            if closest_prediction:
+                predicted_azimuth = closest_prediction['azimuth']
+                predicted_altitude = closest_prediction['altitude']
 
-            time.sleep(1)  # Tunggu sebelum pembacaan data berikutnya
+                # Kendalikan relay berdasarkan prediksi
+                control_azimuth_relay(predicted_azimuth, current_azimuth)
+                control_altitude_relay(predicted_altitude, current_altitude)
+
+            time.sleep(1)  # Tunggu sebelum membaca data berikutnya
 
     except KeyboardInterrupt:
-        print("Program stopped by user")
-    except FileNotFoundError as e:
-        print(e)
+        print("Program dihentikan secara manual")
     finally:
-        # Matikan semua relay
-        wiringop.digitalWrite(RELAY_PIN_1, wiringop.LOW)
-        wiringop.digitalWrite(RELAY_PIN_2, wiringop.LOW)
-        wiringop.digitalWrite(RELAY_PIN_3, wiringop.LOW)
-        wiringop.digitalWrite(RELAY_PIN_4, wiringop.LOW)
+        GPIO.cleanup()  # Bersihkan GPIO saat program berhenti
