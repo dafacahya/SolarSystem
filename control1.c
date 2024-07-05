@@ -6,7 +6,7 @@
 #include <wiringPiI2C.h>
 #include <string.h>
 #include <time.h>
-#include <dirent.h> // Library untuk mengakses direktori
+#include <dirent.h>
 
 // Alamat I2C dari MPU-6050
 #define MPU6050_ADDR 0x68
@@ -216,4 +216,19 @@ int main() {
 
             // Kontrol relay azimuth dan altitude berdasarkan prediksi
             control_azimuth_relay(predicted_azimuth);
-           
+            control_altitude_relay(predicted_altitude);
+
+            delay(1000);  // Tunggu sebelum membaca data berikutnya
+
+            // Cek apakah sudah waktunya untuk beralih ke file CSV berikutnya
+            time_t next_check_time = get_current_time();
+            if (next_check_time >= predictions[num_predictions - 1].timestamp) {
+                free(csv_file_path);
+                csv_file_path = NULL;
+                break; // Keluar dari loop dan mencari file CSV berikutnya
+            }
+        }
+    }
+
+    return 0;
+}
