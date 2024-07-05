@@ -8,55 +8,55 @@
 #include <time.h>
 #include <dirent.h>
 
-// Alamat I2C dari MPU-6050
+// I2C address of MPU-6050
 #define MPU6050_ADDR 0x68
 
-// Register MPU-6050 untuk data akselerometer
+// Registers for MPU-6050 accelerometer data
 #define MPU6050_REG_ACCEL_XOUT_H 0x3B
 #define MPU6050_REG_ACCEL_YOUT_H 0x3D
 #define MPU6050_REG_ACCEL_ZOUT_H 0x3F
 
-// Konfigurasi pin GPIO untuk relay azimuth (pan) dan altitude (tilt)
+// GPIO pin configuration for azimuth (pan) and altitude (tilt) relays
 #define RELAY_PIN_AZIMUTH_UP 20
 #define RELAY_PIN_AZIMUTH_DOWN 22
 #define RELAY_PIN_ALTITUDE_UP 23
 #define RELAY_PIN_ALTITUDE_DOWN 25
 
-// Struct untuk menyimpan data prediksi
+// Struct to store prediction data
 typedef struct {
     float azimuth;
     float altitude;
-    time_t timestamp; // Waktu dalam format time_t
+    time_t timestamp; // Timestamp in time_t format
 } Prediction;
 
-// Fungsi untuk membaca data dari MPU-6050
+// Function to read data from MPU-6050
 void read_mpu6050_data(int fd, int *accel_x, int *accel_y, int *accel_z) {
     *accel_x = wiringPiI2CReadReg16(fd, MPU6050_REG_ACCEL_XOUT_H);
     *accel_y = wiringPiI2CReadReg16(fd, MPU6050_REG_ACCEL_YOUT_H);
     *accel_z = wiringPiI2CReadReg16(fd, MPU6050_REG_ACCEL_ZOUT_H);
 }
 
-// Fungsi untuk menghitung azimuth (pan) berdasarkan data MPU-6050
+// Function to calculate azimuth (pan) based on MPU-6050 data
 float calculate_azimuth(int accel_x, int accel_y, int accel_z) {
     float roll = atan2((float)accel_y, (float)accel_z);
-    float azimuth = roll * (180.0 / M_PI);  // Konversi radian ke derajat
+    float azimuth = roll * (180.0 / M_PI);  // Convert radians to degrees
     if (azimuth < 0) {
-        azimuth += 360.0;  // Pastikan azimuth dalam rentang 0-360 derajat
+        azimuth += 360.0;  // Ensure azimuth is within range 0-360 degrees
     }
     return azimuth;
 }
 
-// Fungsi untuk menghitung altitude (tilt) berdasarkan data MPU-6050
+// Function to calculate altitude (tilt) based on MPU-6050 data
 float calculate_altitude(int accel_x, int accel_y, int accel_z) {
     float pitch = atan2((float)-accel_x, sqrt((float)accel_y * accel_y + (float)accel_z * accel_z));
-    float altitude = pitch * (180.0 / M_PI);  // Konversi radian ke derajat
+    float altitude = pitch * (180.0 / M_PI);  // Convert radians to degrees
     if (altitude < 0) {
-        altitude += 360.0;  // Pastikan altitude dalam rentang 0-360 derajat
+        altitude += 360.0;  // Ensure altitude is within range 0-360 degrees
     }
     return altitude;
 }
 
-// Fungsi untuk membaca prediksi dari file CSV
+// Function to read predictions from CSV file
 int read_predictions_from_csv(const char *filename, Prediction *predictions, int max_predictions) {
     FILE *file = fopen(filename, "r");
     if (!file) {
@@ -70,7 +70,9 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
         char date[20], time[20];
         float predict_azimuth, predict_altitude;
 
+        // Read data from CSV line
         if (sscanf(line, "%19s %19s %f %f", date, time, &predict_azimuth, &predict_altitude) == 4) {
+            // Parse date and time
             struct tm tm_time;
             memset(&tm_time, 0, sizeof(struct tm));
             tm_time.tm_year = atoi(date) - 1900;
@@ -78,9 +80,10 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
             tm_time.tm_mday = atoi(strtok(NULL, "-"));
             tm_time.tm_hour = atoi(strtok(NULL, ":"));
             tm_time.tm_min = atoi(strtok(NULL, ":"));
-            tm_time.tm_sec = 0; // Jika tidak ada detik dalam format, atur ke 0
+            tm_time.tm_sec = 0; // If no seconds in format, set to 0
             time_t timestamp = mktime(&tm_time);
 
+            // Store prediction data
             predictions[count].azimuth = predict_azimuth;
             predictions[count].altitude = predict_altitude;
             predictions[count].timestamp = timestamp;
@@ -92,52 +95,52 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
     return count; // Return the number of predictions read
 }
 
-// Fungsi untuk mendapatkan waktu saat ini
+// Function to get current time
 time_t get_current_time() {
     time_t now;
     time(&now);
     return now;
 }
 
-// Fungsi untuk menggerakkan relay azimuth (pan) berdasarkan azimuth yang diprediksi
+// Function to control azimuth relay based on predicted azimuth
 void control_azimuth_relay(float predicted_azimuth) {
     if (predicted_azimuth < 180) {
-        // Aktifkan relay untuk azimuth naik
+        // Activate relay for azimuth up
         digitalWrite(RELAY_PIN_AZIMUTH_UP, HIGH);
         digitalWrite(RELAY_PIN_AZIMUTH_DOWN, LOW);
     } else {
-        // Aktifkan relay untuk azimuth turun
+        // Activate relay for azimuth down
         digitalWrite(RELAY_PIN_AZIMUTH_UP, LOW);
         digitalWrite(RELAY_PIN_AZIMUTH_DOWN, HIGH);
     }
 }
 
-// Fungsi untuk menggerakkan relay altitude (tilt) berdasarkan altitude yang diprediksi
+// Function to control altitude relay based on predicted altitude
 void control_altitude_relay(float predicted_altitude) {
     if (predicted_altitude < 180) {
-        // Aktifkan relay untuk altitude naik
+        // Activate relay for altitude up
         digitalWrite(RELAY_PIN_ALTITUDE_UP, HIGH);
         digitalWrite(RELAY_PIN_ALTITUDE_DOWN, LOW);
     } else {
-        // Aktifkan relay untuk altitude turun
+        // Activate relay for altitude down
         digitalWrite(RELAY_PIN_ALTITUDE_UP, LOW);
         digitalWrite(RELAY_PIN_ALTITUDE_DOWN, HIGH);
     }
 }
 
-// Fungsi untuk mencari file CSV berikutnya di direktori tertentu
+// Function to find the next CSV file in a directory
 char *find_next_csv_file(const char *dir_path, int *current_year) {
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir(dir_path)) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
-            // Cari file dengan ekstensi .csv yang sesuai urutan tahun
+            // Find file with .csv extension matching year order
             if (strstr(ent->d_name, ".csv") != NULL && strstr(ent->d_name, "predictions_") != NULL) {
                 int year;
                 if (sscanf(ent->d_name, "predictions_%d_to_%*d.csv", &year) == 1 && year >= *current_year) {
                     char *filename = (char *)malloc(strlen(dir_path) + strlen(ent->d_name) + 2);
                     sprintf(filename, "%s/%s", dir_path, ent->d_name);
-                    *current_year = year; // Update tahun saat ini
+                    *current_year = year; // Update current year
                     closedir(dir);
                     return filename;
                 }
@@ -157,7 +160,7 @@ int main() {
         return 1;
     }
 
-    // Setup pin relay
+    // Setup relay pins
     wiringPiSetup();
     pinMode(RELAY_PIN_AZIMUTH_UP, OUTPUT);
     pinMode(RELAY_PIN_AZIMUTH_DOWN, OUTPUT);
@@ -165,21 +168,21 @@ int main() {
     pinMode(RELAY_PIN_ALTITUDE_DOWN, OUTPUT);
 
     // Max predictions to read
-    const int max_predictions = 10; // Adjust this as needed
+    const int max_predictions = 10; // Adjust as needed
 
     // Array to store predictions
     Prediction predictions[max_predictions];
 
-    // Direktori di mana file CSV disimpan
+    // Directory where CSV files are stored
     const char *csv_dir = "Main_Folder";
 
-    // Tahun awal dari file yang dibaca
+    // Initial year from the read file
     int current_year = 2024;
 
     char *csv_file_path = NULL;
 
     while (1) {
-        // Cari file CSV berikutnya
+        // Find next CSV file
         if (!csv_file_path) {
             csv_file_path = find_next_csv_file(csv_dir, &current_year);
             if (!csv_file_path) {
@@ -197,18 +200,18 @@ int main() {
         }
 
         while (1) {
-            // Baca data dari MPU-6050
+            // Read data from MPU-6050
             int accel_x, accel_y, accel_z;
             read_mpu6050_data(fd, &accel_x, &accel_y, &accel_z);
 
-            // Hitung azimuth dan altitude
+            // Calculate azimuth and altitude
             float azimuth = calculate_azimuth(accel_x, accel_y, accel_z);
             float altitude = calculate_altitude(accel_x, accel_y, accel_z);
 
-            // Dapatkan waktu saat ini
+            // Get current time
             time_t current_time = get_current_time();
 
-            // Cari prediksi untuk waktu saat ini
+            // Find prediction for current time
             float predicted_azimuth = 0.0;
             float predicted_altitude = 0.0;
             for (int i = 0; i < num_predictions; ++i) {
@@ -218,18 +221,18 @@ int main() {
                 }
             }
 
-            // Kontrol relay azimuth dan altitude berdasarkan prediksi
+            // Control azimuth and altitude relays based on predictions
             control_azimuth_relay(predicted_azimuth);
             control_altitude_relay(predicted_altitude);
 
-            delay(1000);  // Tunggu sebelum membaca data berikutnya
+            delay(1000);  // Wait before reading next data
 
-            // Cek apakah sudah waktunya untuk beralih ke file CSV berikutnya
+            // Check if it's time to switch to the next CSV file
             time_t next_check_time = get_current_time();
             if (next_check_time >= predictions[num_predictions - 1].timestamp) {
                 free(csv_file_path);
                 csv_file_path = NULL;
-                break; // Keluar dari loop dan mencari file CSV berikutnya
+                break; // Exit loop and find next CSV file
             }
         }
     }
