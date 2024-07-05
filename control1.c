@@ -60,7 +60,7 @@ float calculate_altitude(int accel_x, int accel_y, int accel_z) {
 int read_predictions_from_csv(const char *filename, Prediction *predictions, int max_predictions) {
     FILE *file = fopen(filename, "r");
     if (!file) {
-        fprintf(stderr, "Failed to open CSV file: %s\n", filename);
+        fprintf(stderr, "Failed to open CSV file: %s (%s)\n", filename, strerror(errno));
         return 0;
     }
 
@@ -71,24 +71,27 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
         float predict_azimuth, predict_altitude;
 
         // Read data from CSV line
-        if (sscanf(line, "%19s %19s %f %f", date, time, &predict_azimuth, &predict_altitude) == 4) {
-            // Parse date and time
-            struct tm tm_time;
-            memset(&tm_time, 0, sizeof(struct tm));
-            tm_time.tm_year = atoi(date) - 1900;
-            tm_time.tm_mon = atoi(strtok(time, "-")) - 1;
-            tm_time.tm_mday = atoi(strtok(NULL, "-"));
-            tm_time.tm_hour = atoi(strtok(NULL, ":"));
-            tm_time.tm_min = atoi(strtok(NULL, ":"));
-            tm_time.tm_sec = 0; // If no seconds in format, set to 0
-            time_t timestamp = mktime(&tm_time);
-
-            // Store prediction data
-            predictions[count].azimuth = predict_azimuth;
-            predictions[count].altitude = predict_altitude;
-            predictions[count].timestamp = timestamp;
-            count++;
+        if (sscanf(line, "%19s %19s %f %f", date, time, &predict_azimuth, &predict_altitude) != 4) {
+            fprintf(stderr, "Failed to parse CSV line: %s\n", line);
+            continue;
         }
+
+        // Parse date and time
+        struct tm tm_time;
+        memset(&tm_time, 0, sizeof(struct tm));
+        tm_time.tm_year = atoi(date) - 1900;
+        tm_time.tm_mon = atoi(strtok(time, "-")) - 1;
+        tm_time.tm_mday = atoi(strtok(NULL, "-"));
+        tm_time.tm_hour = atoi(strtok(NULL, ":"));
+        tm_time.tm_min = atoi(strtok(NULL, ":"));
+        tm_time.tm_sec = 0; // If no seconds in format, set to 0
+        time_t timestamp = mktime(&tm_time);
+
+        // Store prediction data
+        predictions[count].azimuth = predict_azimuth;
+        predictions[count].altitude = predict_altitude;
+        predictions[count].timestamp = timestamp;
+        count++;
     }
 
     fclose(file);
