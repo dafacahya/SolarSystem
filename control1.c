@@ -6,7 +6,7 @@
 #include <wiringPiI2C.h>
 #include <string.h>
 #include <time.h>
-#include <dirent.h> // Library untuk mengakses direktori
+#include <dirent.h>
 
 // Alamat I2C dari MPU-6050
 #define MPU6050_ADDR 0x68
@@ -70,7 +70,7 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
         char date[20], time[20];
         float predict_azimuth, predict_altitude;
 
-        if (sscanf(line, "%19[^,],%19[^,],%f,%f", Date, Time, &Predict_Azimuth, &Predict_Altitude) == 4) {
+        if (sscanf(line, "%19[^,],%19[^,],%f,%f", date, time, &predict_azimuth, &predict_altitude) == 4) {
             struct tm tm_time;
             memset(&tm_time, 0, sizeof(struct tm));
             strptime(date, "%Y-%m-%d", &tm_time); // Format tanggal yang diharapkan
