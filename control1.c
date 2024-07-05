@@ -156,7 +156,7 @@ int main() {
     Prediction predictions[max_predictions];
 
     // Cari file CSV dalam direktori "main"
-    char *csv_file_path = find_csv_file("main");
+    char *csv_file_path = find_csv_file("Main_Folder");
     if (!csv_file_path) {
         fprintf(stderr, "No CSV file found in directory: main\n");
         return 1;
