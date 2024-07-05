@@ -11,12 +11,11 @@ RELAY_PIN_AZIMUTH_DOWN = 22
 RELAY_PIN_ALTITUDE_UP = 23
 RELAY_PIN_ALTITUDE_DOWN = 25
 
-# Inisialisasi GPIO
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(RELAY_PIN_AZIMUTH_UP, GPIO.OUT)
-GPIO.setup(RELAY_PIN_AZIMUTH_DOWN, GPIO.OUT)
-GPIO.setup(RELAY_PIN_ALTITUDE_UP, GPIO.OUT)
-GPIO.setup(RELAY_PIN_ALTITUDE_DOWN, GPIO.OUT)
+# Inisialisasi GPIO menggunakan DigitalOutputDevice dari gpiozero
+relay_azimuth_up = DigitalOutputDevice(RELAY_PIN_AZIMUTH_UP)
+relay_azimuth_down = DigitalOutputDevice(RELAY_PIN_AZIMUTH_DOWN)
+relay_altitude_up = DigitalOutputDevice(RELAY_PIN_ALTITUDE_UP)
+relay_altitude_down = DigitalOutputDevice(RELAY_PIN_ALTITUDE_DOWN)
 
 # Alamat I2C dari MPU-6050
 MPU6050_ADDR = 0x68
@@ -89,27 +88,27 @@ def get_current_time():
 def control_azimuth_relay(predicted_azimuth, current_azimuth):
     if abs(predicted_azimuth - current_azimuth) > 5:  # Contoh threshold perubahan sudut
         if predicted_azimuth < current_azimuth:
-            GPIO.output(RELAY_PIN_AZIMUTH_UP, False)
-            GPIO.output(RELAY_PIN_AZIMUTH_DOWN, True)
+            relay_azimuth_up.off()
+            relay_azimuth_down.on()
         else:
-            GPIO.output(RELAY_PIN_AZIMUTH_UP, True)
-            GPIO.output(RELAY_PIN_AZIMUTH_DOWN, False)
+            relay_azimuth_up.on()
+            relay_azimuth_down.off()
     else:
-        GPIO.output(RELAY_PIN_AZIMUTH_UP, False)
-        GPIO.output(RELAY_PIN_AZIMUTH_DOWN, False)
+        relay_azimuth_up.off()
+        relay_azimuth_down.off()
 
 # Fungsi untuk menggerakkan relay altitude (tilt) berdasarkan altitude yang diprediksi
 def control_altitude_relay(predicted_altitude, current_altitude):
     if abs(predicted_altitude - current_altitude) > 5:  # Contoh threshold perubahan sudut
         if predicted_altitude < current_altitude:
-            GPIO.output(RELAY_PIN_ALTITUDE_UP, False)
-            GPIO.output(RELAY_PIN_ALTITUDE_DOWN, True)
+            relay_altitude_up.off()
+            relay_altitude_down.on()
         else:
-            GPIO.output(RELAY_PIN_ALTITUDE_UP, True)
-            GPIO.output(RELAY_PIN_ALTITUDE_DOWN, False)
+            relay_altitude_up.on()
+            relay_altitude_down.off()
     else:
-        GPIO.output(RELAY_PIN_ALTITUDE_UP, False)
-        GPIO.output(RELAY_PIN_ALTITUDE_DOWN, False)
+        relay_altitude_up.off()
+        relay_altitude_down.off()
 
 if __name__ == "__main__":
     try:
@@ -144,4 +143,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Program dihentikan secara manual")
     finally:
-        GPIO.cleanup()  # Bersihkan GPIO saat program berhenti
+        # Bersihkan relay saat program berhenti
+        relay_azimuth_up.close()
+        relay_azimuth_down.close()
+        relay_altitude_up.close()
+        relay_altitude_down.close()
