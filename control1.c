@@ -61,7 +61,7 @@ float calculate_altitude(int accel_x, int accel_y, int accel_z) {
 int read_predictions_from_csv(const char *filename, Prediction *predictions, int max_predictions) {
     FILE *file = fopen(filename, "r");
     if (!file) {
-        fprintf(stderr, "Failed to open CSV file: %s (%s)\n", filename, strerror(errno));
+        perror("Failed to open CSV file");
         return 0;
     }
 
