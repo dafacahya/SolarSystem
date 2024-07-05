@@ -73,8 +73,8 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
         if (sscanf(line, "%19[^,],%19[^,],%f,%f", date, time, &predict_azimuth, &predict_altitude) == 4) {
             struct tm tm_time;
             memset(&tm_time, 0, sizeof(struct tm));
-            strptime(date, "%Y-%m-%d", &tm_time); // Format tanggal yang diharapkan
-            strptime(time, "%H:%M:%S", &tm_time); // Format waktu yang diharapkan
+            strftime(date, "%Y-%m-%d", &tm_time); // Format tanggal yang diharapkan
+            strftime(time, "%H:%M:%S", &tm_time); // Format waktu yang diharapkan
             time_t timestamp = mktime(&tm_time);
 
             predictions[count].azimuth = predict_azimuth;
