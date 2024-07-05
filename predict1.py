@@ -110,7 +110,7 @@ def main():
 
     X, scaler = preprocess_timestamps(timestamps)
     X = X.reshape((X.shape[0], 1, 1))  # Reshape for LSTM input
-    X = np.repeat(X, 4, axis=2)
+    X = np.repeat(X, 3, axis=2)
 
     predictions = predict_with_models(models, X)
     predictions = scaler.inverse_transform(predictions)
@@ -120,7 +120,7 @@ def main():
     predictions = validate_and_adjust_prediction(predictions, ephem_data)
 
     output_path = os.path.join(main_folder, f'predictions_{start_date.year}_to_{start_date.year + num_years - 1}.csv')
-    save_predictions_to_csv(timestamps, predictions, ephem_data, output_path)
+    save_predictions_to_csv(timestamps, predictions, output_path)
 
     print(f"Predictions saved to '{output_path}'")
 
