@@ -78,19 +78,18 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
         }
 
         // Parse date and time
-        struct tm *tm_time = gmtime(&timestamp);
+        struct tm *tm_time = gmtime(&predictions[count].timestamp);
         tm_time->tm_year = atoi(date) - 1900;
         tm_time->tm_mon = atoi(strtok(time, "-")) - 1;
         tm_time->tm_mday = atoi(strtok(NULL, "-"));
         tm_time->tm_hour = atoi(strtok(NULL, ":"));
         tm_time->tm_min = atoi(strtok(NULL, ":"));
         tm_time->tm_sec = 0; // If no seconds in format, set to 0
-        time_t timestamp = mktime(tm_time);
+        predictions[count].timestamp = mktime(tm_time);
 
         // Store prediction data
         predictions[count].azimuth = predict_azimuth;
         predictions[count].altitude = predict_altitude;
-        predictions[count].timestamp = timestamp;
         count++;
     }
 
