@@ -59,10 +59,10 @@ def predict_with_models(models, X):
 # Function to save predictions to CSV file
 def save_predictions_to_csv(timestamps, predictions, output_path):
     df = pd.DataFrame({
-        'Date': [dt.strftime('%Y-%m-%d') for dt in timestamps],
-        'Time': [dt.strftime('%H:%M:%S') for dt in timestamps],
-        'Predicted_Azimuth': predictions[:, 0],
-        'Predicted_Altitude': predictions[:, 1]
+        'date': [dt.strftime('%Y-%m-%d') for dt in timestamps],
+        'time': [dt.strftime('%H:%M:%S') for dt in timestamps],
+        'predicted_azimuth': predictions[:, 0],
+        'predicted_altitude': predictions[:, 1]
     })
     df.to_csv(output_path, index=False, sep=';')
 
