@@ -67,11 +67,18 @@ int read_predictions_from_csv(const char *filename, Prediction *predictions, int
     char line[100];
     int count = 0;
     while (fgets(line, sizeof(line), file) && count < max_predictions) {
-        float azimuth, altitude;
-        time_t timestamp;
-        if (sscanf(line, "%f,%f,%ld", &azimuth, &altitude, &timestamp) == 3) {
-            predictions[count].azimuth = azimuth;
-            predictions[count].altitude = altitude;
+        char date[20], time[20];
+        float predict_azimuth, predict_altitude;
+
+        if (sscanf(line, "%19[^,],%19[^,],%f,%f", Date, Time, &Predict_Azimuth, &Predict_Altitude) == 4) {
+            struct tm tm_time;
+            memset(&tm_time, 0, sizeof(struct tm));
+            strptime(date, "%Y-%m-%d", &tm_time); // Format tanggal yang diharapkan
+            strptime(time, "%H:%M:%S", &tm_time); // Format waktu yang diharapkan
+            time_t timestamp = mktime(&tm_time);
+
+            predictions[count].azimuth = predict_azimuth;
+            predictions[count].altitude = predict_altitude;
             predictions[count].timestamp = timestamp;
             count++;
         }

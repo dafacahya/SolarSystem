@@ -57,11 +57,12 @@ def predict_with_models(models, X):
     return y_pred_avg
 
 # Function to save predictions to CSV file
-def save_predictions_to_csv(timestamps, predictions, ephem_data, output_path):
+def save_predictions_to_csv(timestamps, predictions, output_path):
     df = pd.DataFrame({
-        'Timestamp': [dt.strftime('%Y-%m-%d %H:%M:%S') for dt in timestamps],
+        'Date': [dt.strftime('%Y-%m-%d') for dt in timestamps],
+        'Time': [dt.strftime('%H:%M:%S') for dt in timestamps],
         'Predicted_Azimuth': predictions[:, 0],
-        'Predicted_Altitude': predictions[:, 1],
+        'Predicted_Altitude': predictions[:, 1]
     })
     df.to_csv(output_path, index=False, sep=';')
 
@@ -109,7 +110,7 @@ def main():
 
     X, scaler = preprocess_timestamps(timestamps)
     X = X.reshape((X.shape[0], 1, 1))  # Reshape for LSTM input
-    X = np.repeat(X, 3, axis=2)
+    X = np.repeat(X, 4, axis=2)
 
     predictions = predict_with_models(models, X)
     predictions = scaler.inverse_transform(predictions)
