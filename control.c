@@ -14,10 +14,10 @@
 #define MPU6050_REG_ACCEL_ZOUT_H 0x3F
 
 // Konfigurasi pin GPIO untuk relay azimuth (pan) dan altitude (tilt)
-#define RELAY_PIN_AZIMUTH_UP 0
-#define RELAY_PIN_AZIMUTH_DOWN 15
-#define RELAY_PIN_ALTITUDE_UP 12
-#define RELAY_PIN_ALTITUDE_DOWN 2
+#define RELAY_PIN_AZIMUTH_UP 15
+#define RELAY_PIN_AZIMUTH_DOWN 12
+#define RELAY_PIN_ALTITUDE_UP 2
+#define RELAY_PIN_ALTITUDE_DOWN 16
 
 // Fungsi untuk membaca data dari MPU-6050
 void read_mpu6050_data(int fd, int *accel_x, int *accel_y, int *accel_z) {
