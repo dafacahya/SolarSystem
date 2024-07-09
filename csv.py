@@ -11,23 +11,20 @@ def read_predicted_data(csv_file):
     altitudes = df['Altitude'].apply(lambda x: float(x[:-1])).values  # Hapus karakter ° dan ubah ke float
     return timestamps, azimuths, altitudes
 
-def find_csv_file(directory):
-    csv_files = [f for f in os.listdir(directory) if f.endswith('.csv')]
-    if csv_files:
-        return csv_files[0]  # Pilih file pertama yang ditemukan
-    else:
-        raise FileNotFoundError("No CSV file found in the directory.")
-
 if __name__ == "__main__":
     try:
-        # Temukan file CSV di direktori Main_Folder
+        # Tentukan file CSV di direktori Main_Folder
         directory = 'Main_Folder'  # Ganti dengan direktori yang sesuai
-        csv_file = find_csv_file(directory)
-        print(f"Using CSV file: {csv_file}")
+        csv_file = 'predictions_2024_to_2026.csv'
+        csv_file_path = os.path.join(directory, csv_file)
+        if not os.path.exists(csv_file_path):
+            raise FileNotFoundError(f"No CSV file found at {csv_file_path}")
+
+        print(f"Using CSV file: {csv_file_path}")
 
         while True:
             # Baca data prediksi dari file CSV
-            timestamps, azimuths, altitudes = read_predicted_data(os.path.join(directory, csv_file))
+            timestamps, azimuths, altitudes = read_predicted_data(csv_file_path)
 
             # Ambil nilai azimuth dan altitude terbaru
             predicted_azimuth = azimuths[-1]
